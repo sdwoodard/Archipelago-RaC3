@@ -89,6 +89,26 @@ from worlds.rac3.constants.wrench import RAC3WRENCH
 from worlds.rac3.locations import get_challenge_locations, get_completion_location_names
 
 
+PLANET_GOAL_LOCATIONS = (
+    (RAC3LOCATION.FLORANA_DEFEAT_QWARK,),
+    (RAC3LOCATION.MARCADIA_MEET_AL,),
+    (RAC3LOCATION.NATION_GRAND_PRIZE_BOUT, RAC3LOCATION.NATION_MEET_COURTNEY),
+    (RAC3LOCATION.AQUATOS_BASE,),
+    (RAC3LOCATION.TYHRRANOSIS_BOSS,),
+    (RAC3LOCATION.DAXX_FACILITY, RAC3LOCATION.DAXX_WARSHIP),
+    (RAC3LOCATION.OBANI_GEMINI_SKIDD,),
+    (RAC3LOCATION.BLACKWATER_CITY_RANGERS_3,),
+    (RAC3LOCATION.HOLOSTAR_RETURN_TO_SHIP,),
+    (RAC3LOCATION.DRACO_COURTNEY,),
+    (RAC3LOCATION.ZELDRIN_STARPORT_SHIP,),
+    (RAC3LOCATION.METROPOLIS_DEFEAT_KLUNK,),
+    (RAC3LOCATION.CRASH_SITE_ESCAPE_POD,),
+    (RAC3LOCATION.ARIDIA_RANGERS_5,),
+    (RAC3LOCATION.HIDEOUT_FIND_QWARK,),
+    (RAC3LOCATION.KOROS_BASE,),
+)
+
+
 class Rac3Interface(GameInterface):
     """Handles reading and modifying the game memory"""
 
@@ -1575,6 +1595,9 @@ class Rac3Interface(GameInterface):
     # Check Goal #
     ##############
 
+    def completed_planet_count(self) -> int:
+        return sum(self.checked_locations.issuperset(objectives) for objectives in PLANET_GOAL_LOCATIONS)
+
     def check_victory(self, server_locations) -> bool:
         """Returns a bool for if the current game state is 'completed' or not"""
         if not self.end_game:
@@ -1586,7 +1609,7 @@ class Rac3Interface(GameInterface):
                 return False
             if self.options.goal_skillpoints > self.skillpoints:
                 return False
-            if self.options.goal_planets > len(self.visited_planets):
+            if self.options.goal_planets and self.completed_planet_count() < self.options.goal_planets:
                 return False
             if self.options.goal_completion:
                 completion_locations = get_completion_location_names(
@@ -3728,7 +3751,6 @@ class Rac3Interface(GameInterface):
         completed_requirements = "\n\nThe following requirements are already completed:"
         collected_sewer = self.crystals_current + self.crystals_traded
         collected_tbolts = self.titanium_bolt_count()
-        completed_planets = len(self.visited_planets)
         completion_locations = get_completion_location_names(
             (LOCATION_FROM_AP_CODE[code] for code in server_locations), bool(self.options.lock_cc)
         )
@@ -3755,6 +3777,7 @@ class Rac3Interface(GameInterface):
             else:
                 completed_requirements += "\n- Skillpoints requirement completed!"
         if self.options.goal_planets:
+            completed_planets = self.completed_planet_count()
             if self.options.goal_planets > completed_planets:
                 goal_conditions += f"\n- Planets completed ({completed_planets}/{self.options.goal_planets})"
             else:
